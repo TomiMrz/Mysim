@@ -170,5 +170,18 @@ def main():
 
     analizar_metricas(T, llegadas, servicios)
 
+def main_2():
+    T = 48
+    seed = SEED
+    for i in [random_minstd,random_xorshift,random_midsquare]:
+        nt, llegadas = Poisson_no_homogeneo_adelgazamiento(T, seed, i)
+        servicios = []
+        for _ in range(nt):
+            u = random_minstd(seed)
+            seed = update_seed(u)
+            servicios.append(exponencial(u))
+
+        analizar_metricas(T, llegadas, servicios)
+
 if __name__ == "__main__":
-    main()
+    main_2()
