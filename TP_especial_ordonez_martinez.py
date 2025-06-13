@@ -177,7 +177,7 @@ def main_2():
         nt, llegadas = Poisson_no_homogeneo_adelgazamiento(T, seed, i)
         servicios = []
         for _ in range(nt):
-            u = random_minstd(seed)
+            u = i(seed)
             seed = update_seed(u)
             servicios.append(exponencial(u))
 
