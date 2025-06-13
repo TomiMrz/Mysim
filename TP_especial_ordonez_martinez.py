@@ -28,20 +28,6 @@ def random_midsquare(seed):
     x = (x**2 // 100000) % 10000000000
     return x/10000000000
 
-#def random_list(seed,n,method):
-#    values = []
-#    for _ in range(n):
-#        result = method(seed) 
-#        values.append(result)
-#        seed = int(result * 10000000000)
-#    return values
-
-# def random_gen(list, method):
-#    index = time_ns() % len(list)
-#    seed = int(list[index] * 10000000000)
-#    sleep(0.000000001)
-#    return method(seed)
-
 def update_seed(value):
     """ Actualiza el seed basado en el valor generado """
     return int(value * 10000000000)
@@ -57,7 +43,7 @@ def Poisson_no_homogeneo_adelgazamiento(T,seed,random):
     'Devuelve el numero de eventos NT y los tiempos en Eventos'
     'lamda_t(t): intensidad, lamda_t(t)<=lamda'
     lamda = 30
-    NT = 0
+    nt = 0
     Eventos = []
     U = 1 - random(seed)
     seed = update_seed(U)
@@ -66,12 +52,12 @@ def Poisson_no_homogeneo_adelgazamiento(T,seed,random):
         V = random(seed)
         seed = update_seed(V)
         if V < lamda_t(t) / lamda:
-            NT += 1
+            nt += 1
             Eventos.append(t)
         random_value = random(seed)
         t += -math.log(1 - random_value) / lamda
         seed = update_seed(random_value)
-    return NT, Eventos
+    return nt, Eventos
 
 
 def analizar_metricas(T, llegadas, servicios):
@@ -82,34 +68,34 @@ def analizar_metricas(T, llegadas, servicios):
     tiempos_sistema = []
     ocupacion_por_hora = [0] * (T+1)
 
-    eventos = sorted([(t, 'llegada', i) for i, t in enumerate(llegadas)])
     for i, llegada in enumerate(llegadas):
         servicio = servicios[i]
         inicio_atencion = max(llegada, servidor_ocupado_hasta)
         fin_atencion = inicio_atencion + servicio
         espera = inicio_atencion - llegada
 
-        tiempos_espera.append(espera)
-        tiempos_sistema.append(fin_atencion - llegada)
-        tiempo_total_ocupado += servicio
-        servidor_ocupado_hasta = fin_atencion
-        
-        # TODO: Chequear si esto está bien
-        h = int(inicio_atencion)
-        if int(inicio_atencion) != int(inicio_atencion + servicio):
-            # Si el servicio no termina en la misma hora,
-            # se distribuye el tiempo de servicio en dos horas
-            ocupacion_por_hora[h] += servicio - (inicio_atencion - h)
-            ocupacion_por_hora[h + 1] += (inicio_atencion + servicio) - (h + 1)
+        tiempos_espera.append(espera) # Tiempo de espera en la cola
+        tiempos_sistema.append(fin_atencion - llegada) # Tiempo total en el sistema del cliente
+        tiempo_total_ocupado += servicio # Tiempo total que el servidor estuvo ocupado
+        servidor_ocupado_hasta = fin_atencion # Actualizar el tiempo hasta el que el servidor está ocupado para poder calcular correctamente el inicio de atención del siguiente cliente
+
+        # Sumar el tiempo de ocupación por hora
+        inicio_hora = int(inicio_atencion)
+        fin_hora = int(fin_atencion)
+        if inicio_hora == fin_hora:
+            ocupacion_por_hora[inicio_hora] += servicio
         else:
-            ocupacion_por_hora[h] += servicio
+            tiempo_hora1 = 1 - (inicio_atencion - inicio_hora)  # Tiempo ocupado en la primera hora
+            tiempo_hora2 = servicio - tiempo_hora1  # Tiempo ocupado en la segunda hora
+            ocupacion_por_hora[inicio_hora] += tiempo_hora1
+            ocupacion_por_hora[fin_hora] += tiempo_hora2
 
     for h in ocupacion_por_hora:
         h *= 100
 
     # Evolución de la cola
-    eventos = sorted([(t, 'llegada') for t in llegadas] + [(t, 'salida') for t in 
-                [max(llegadas[i], sum(servicios[:i])) + servicios[i] for i in range(NT)]])
+    eventos = sorted([(t, 'llegada') for t in llegadas] + [(t, 'salida') for t in
+                                                           [max(llegadas[i], sum(servicios[:i])) + servicios[i] for i in range(NT)]])
     en_cola = 0
     tiempos, valores = [], []
     for t, tipo in eventos:
@@ -124,8 +110,10 @@ def analizar_metricas(T, llegadas, servicios):
     tiempo_promedio_sistema = sum(tiempos_sistema) / NT
     porcentaje_ocupado = (tiempo_total_ocupado / T) * 100
 
-    print(f"Tiempo promedio en el sistema: {tiempo_promedio_sistema*3600:.2f} segundos")
-    print(f"Porcentaje del tiempo que el servidor está ocupado: {porcentaje_ocupado:.2f}%")
+    print(
+        f"Tiempo promedio en el sistema: {tiempo_promedio_sistema*3600:.2f} segundos")
+    print(
+        f"Porcentaje del tiempo que el servidor está ocupado: {porcentaje_ocupado:.2f}%")
 
     # Gráficos
     plt.figure(figsize=(12, 10))
@@ -171,12 +159,12 @@ def analizar_metricas(T, llegadas, servicios):
 def main():
     T = 48  # duración total en horas
     seed = SEED
-    NT, llegadas = Poisson_no_homogeneo_adelgazamiento(T, seed, random_xorshift)
+    nt, llegadas = Poisson_no_homogeneo_adelgazamiento(T, seed, random_minstd)
 
     # Generar tiempos de servicio
     servicios = []
-    for _ in range(NT):
-        u = random_xorshift(seed)
+    for _ in range(nt):
+        u = random_minstd(seed)
         seed = update_seed(u)
         servicios.append(exponencial(u))
 
