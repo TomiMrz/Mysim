@@ -178,7 +178,7 @@ def main():
             u = i(seed)
             seed = update_seed(u)
             servicios.append(exponencial(u))
-
+        print(f"Resultados para el generador: {i.__name__}")
         analizar_metricas(T, llegadas, servicios)
 
 if __name__ == "__main__":
