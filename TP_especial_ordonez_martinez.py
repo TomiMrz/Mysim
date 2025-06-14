@@ -1,6 +1,4 @@
-# from time import time_ns,sleep
 import matplotlib.pyplot as plt
-from random import random
 import math
 
 SEED = 1234567890
@@ -73,20 +71,20 @@ def analizar_metricas(T, llegadas, servicios):
         inicio_atencion = max(llegada, servidor_ocupado_hasta)
         fin_atencion = inicio_atencion + servicio
         espera = inicio_atencion - llegada
+        
+        tiempos_espera.append(espera)
+        tiempos_sistema.append(fin_atencion - llegada)
+        tiempo_total_ocupado += servicio
+        servidor_ocupado_hasta = fin_atencion
 
-        tiempos_espera.append(espera) # Tiempo de espera en la cola
-        tiempos_sistema.append(fin_atencion - llegada) # Tiempo total en el sistema del cliente
-        tiempo_total_ocupado += servicio # Tiempo total que el servidor estuvo ocupado
-        servidor_ocupado_hasta = fin_atencion # Actualizar el tiempo hasta el que el servidor está ocupado para poder calcular correctamente el inicio de atención del siguiente cliente
-
-        # Sumar el tiempo de ocupación por hora
+        # Actualizar ocupación por hora
         inicio_hora = int(inicio_atencion)
         fin_hora = int(fin_atencion)
         if inicio_hora == fin_hora:
             ocupacion_por_hora[inicio_hora] += servicio
         else:
-            tiempo_hora1 = 1 - (inicio_atencion - inicio_hora)  # Tiempo ocupado en la primera hora
-            tiempo_hora2 = servicio - tiempo_hora1  # Tiempo ocupado en la segunda hora
+            tiempo_hora1 = 1 - (inicio_atencion - inicio_hora)
+            tiempo_hora2 = servicio - tiempo_hora1
             ocupacion_por_hora[inicio_hora] += tiempo_hora1
             ocupacion_por_hora[fin_hora] += tiempo_hora2
 
@@ -110,12 +108,9 @@ def analizar_metricas(T, llegadas, servicios):
     tiempo_promedio_sistema = sum(tiempos_sistema) / NT
     porcentaje_ocupado = (tiempo_total_ocupado / T) * 100
 
-    print(
-        f"Tiempo promedio en el sistema: {tiempo_promedio_sistema*3600:.2f} segundos")
-    print(
-        f"Porcentaje del tiempo que el servidor está ocupado: {porcentaje_ocupado:.2f}%")
+    print(f"Tiempo promedio en el sistema: {tiempo_promedio_sistema*3600:.2f} segundos")
+    print(f"Porcentaje del tiempo que el servidor está ocupado: {porcentaje_ocupado:.2f}%")
 
-    # Gráficos
     plt.figure(figsize=(12, 10))
 
     plt.subplot(2, 3, 1)
@@ -155,25 +150,28 @@ def analizar_metricas(T, llegadas, servicios):
     plt.tight_layout()
     plt.show()
 
+def main_randomtest():
+    """ Grafica la distribución de números aleatorios de los 3 generadores """
+    num_samples = 10000
+    generators = [random_minstd, random_xorshift, random_midsquare]
+    for generator in generators:
+        seed = SEED
+        samples = []
+        for _ in range(num_samples):
+            u = generator(seed)
+            seed = update_seed(u)
+            samples.append(u)
+        plt.hist(samples, bins=30, alpha=0.5)
+        plt.title("Distribución de números aleatorios con " + generator.__name__)
+        plt.xlabel("Valor")
+        plt.ylabel("Frecuencia")
+        plt.legend()
+        plt.show()
 
 def main():
-    T = 48  # duración total en horas
-    seed = SEED
-    nt, llegadas = Poisson_no_homogeneo_adelgazamiento(T, seed, random_minstd)
-
-    # Generar tiempos de servicio
-    servicios = []
-    for _ in range(nt):
-        u = random_minstd(seed)
-        seed = update_seed(u)
-        servicios.append(exponencial(u))
-
-    analizar_metricas(T, llegadas, servicios)
-
-def main_2():
     T = 48
-    seed = SEED
     for i in [random_minstd,random_xorshift,random_midsquare]:
+        seed = SEED
         nt, llegadas = Poisson_no_homogeneo_adelgazamiento(T, seed, i)
         servicios = []
         for _ in range(nt):
@@ -184,4 +182,4 @@ def main_2():
         analizar_metricas(T, llegadas, servicios)
 
 if __name__ == "__main__":
-    main_2()
+    main()
