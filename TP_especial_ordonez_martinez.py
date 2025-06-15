@@ -58,7 +58,7 @@ def Poisson_no_homogeneo_adelgazamiento(T,seed,random):
     return nt, Eventos
 
 
-def analizar_metricas(T, llegadas, servicios):
+def analizar_metricas(T, llegadas, servicios, generador):
     NT = len(llegadas)
     servidor_ocupado_hasta = 0
     tiempo_total_ocupado = 0
@@ -108,8 +108,8 @@ def analizar_metricas(T, llegadas, servicios):
     tiempo_promedio_sistema = sum(tiempos_sistema) / NT
     porcentaje_ocupado = (tiempo_total_ocupado / T) * 100
 
-    print(f"Tiempo promedio en el sistema: {tiempo_promedio_sistema*3600:.2f} segundos")
-    print(f"Porcentaje del tiempo que el servidor está ocupado: {porcentaje_ocupado:.2f}%")
+    print(f"Tiempo promedio en el sistema ({generador}): {tiempo_promedio_sistema*3600:.2f} segundos")
+    print(f"Porcentaje del tiempo que el servidor está ocupado ({generador}): {porcentaje_ocupado:.2f}%")
 
     plt.figure(figsize=(12, 10))
 
@@ -117,35 +117,35 @@ def analizar_metricas(T, llegadas, servicios):
     plt.plot(range(T+1), ocupacion_por_hora, label="Utilización por hora")
     plt.xlabel("Hora")
     plt.ylabel("Utilización")
-    plt.title("Tasa de utilización por hora")
+    plt.title("Tasa de utilización por hora ({generador})" .format(generador=generador))
     plt.grid(True)
 
     plt.subplot(2, 3, 2)
     plt.hist([t*3600 for t in tiempos_espera], bins=30, color='skyblue')
     plt.xlabel("Tiempo de espera (s)")
-    plt.title("Distribución de los tiempos de espera")
+    plt.title("Distribución de los tiempos de espera ({generador})" .format(generador=generador))
 
     plt.subplot(2, 3, 3)
     plt.plot(tiempos, valores, drawstyle='steps-post')
     plt.xlabel("Tiempo (h)")
     plt.ylabel("Longitud de la cola")
-    plt.title("Evolución de la cola")
+    plt.title("Evolución de la cola ({generador})" .format(generador=generador))
 
     plt.subplot(2, 3, 4)
     plt.hist([t*3600 for t in tiempos_sistema], bins=30, color='orange')
     plt.xlabel("Tiempo en el sistema (s)")
-    plt.title("Histograma del tiempo en el sistema")
+    plt.title("Histograma del tiempo en el sistema ({generador})" .format(generador=generador))
 
     plt.subplot(2, 3, 5)
     interarribos = [(llegadas[i+1] - llegadas[i])*3600 for i in range(NT-1)]
     plt.hist(interarribos, bins=30, color='green')
     plt.xlabel("Tiempo entre arribos (s)")
-    plt.title("Distribución de tiempo entre arribos")
+    plt.title("Distribución de tiempo entre arribos ({generador})" .format(generador=generador))
 
     plt.subplot(2, 3, 6)
     plt.hist([s*3600 for s in servicios], bins=30, color='purple')
     plt.xlabel("Tiempo de servicio (s)")
-    plt.title("Distribución de tiempos de servicio")
+    plt.title("Distribución de tiempos de servicio ({generador})" .format(generador=generador))
 
     plt.tight_layout()
     plt.show()
@@ -179,7 +179,7 @@ def main():
             seed = update_seed(u)
             servicios.append(exponencial(u))
 
-        analizar_metricas(T, llegadas, servicios)
+        analizar_metricas(T, llegadas, servicios, i.__name__.replace('random_',''))
 
 if __name__ == "__main__":
     main()
